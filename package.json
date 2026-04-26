@@ -1,7 +1,7 @@
 {
-  "name": "@enescinar/twitter-mcp",
-  "version": "0.2.0",
-  "description": "A Model Context Protocol server allows to interact with Twitter, enabling posting tweets and searching Twitter.",
+  "name": "twitter-mcp-media",
+  "version": "0.2.0-media.1",
+  "description": "Fork of @enescinar/twitter-mcp that surfaces media (images, videos, preview URLs) in search_tweets responses.",
   "type": "module",
   "main": "build/index.js",
   "bin": {
@@ -38,10 +38,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/EnesCinr/twitter-mcp.git"
+    "url": "git+https://github.com/josha/twitter-mcp-media.git"
   },
   "bugs": {
-    "url": "https://github.com/EnesCinr/twitter-mcp/issues"
+    "url": "https://github.com/josha/twitter-mcp-media/issues"
   },
-  "homepage": "https://github.com/EnesCinr/twitter-mcp#readme"
+  "homepage": "https://github.com/josha/twitter-mcp-media#readme"
 }

@@ -40,12 +40,19 @@ export interface PostedTweet {
     text: string;
 }
 
+export interface MediaItem {
+    type: string;
+    url: string | null;
+    preview_image_url: string | null;
+}
+
 export interface Tweet {
     id: string;
     text: string;
     authorId: string;
     metrics: TweetMetrics;
     createdAt: string;
+    media: MediaItem[];
 }
 
 export interface TwitterUser {
@@ -77,6 +84,7 @@ export interface FormattedTweet {
     };
     content: string;
     metrics: TweetMetrics;
+    media: MediaItem[];
     url: string;
 }
 

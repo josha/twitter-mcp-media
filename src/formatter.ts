@@ -9,6 +9,7 @@ export class ResponseFormatter {
       },
       content: tweet.text,
       metrics: tweet.metrics,
+      media: tweet.media ?? [],
       url: `https://twitter.com/${user.username}/status/${tweet.id}`
     };
   }
@@ -48,14 +49,25 @@ export class ResponseFormatter {
       return header + '\nNo tweets found matching your query.';
     }
 
-    const tweetBlocks = response.tweets.map(tweet => [
-      `Tweet #${tweet.position}`,
-      `From: @${tweet.author.username}`,
-      `Content: ${tweet.content}`,
-      `Metrics: ${tweet.metrics.likes} likes, ${tweet.metrics.retweets} retweets`,
-      `URL: ${tweet.url}`,
-      '='
-    ].join('\n'));
+    const tweetBlocks = response.tweets.map(tweet => {
+      const lines = [
+        `Tweet #${tweet.position}`,
+        `From: @${tweet.author.username}`,
+        `Content: ${tweet.content}`,
+        `Metrics: ${tweet.metrics.likes} likes, ${tweet.metrics.retweets} retweets`,
+      ];
+      if (tweet.media && tweet.media.length > 0) {
+        const mediaParts = tweet.media.map(m =>
+          `${m.type}:${m.url ?? m.preview_image_url ?? '?'}`
+        );
+        lines.push(`Media: ${mediaParts.join(', ')}`);
+      } else {
+        lines.push('Media: (none)');
+      }
+      lines.push(`URL: ${tweet.url}`);
+      lines.push('=');
+      return lines.join('\n');
+    });
 
     return [header, ...tweetBlocks].join('\n\n');
   }

@@ -1,5 +1,5 @@
 import { TwitterApi } from 'twitter-api-v2';
-import { Config, TwitterError, Tweet, TwitterUser, PostedTweet } from './types.js';
+import { Config, TwitterError, Tweet, TwitterUser, PostedTweet, MediaItem } from './types.js';
 
 export class TwitterClient {
   private client: TwitterApi;
@@ -46,25 +46,45 @@ export class TwitterClient {
 
       const response = await this.client.v2.search(query, {
         max_results: count,
-        expansions: ['author_id'],
-        'tweet.fields': ['public_metrics', 'created_at'],
-        'user.fields': ['username', 'name', 'verified']
+        expansions: ['author_id', 'attachments.media_keys'],
+        'tweet.fields': ['public_metrics', 'created_at', 'attachments'],
+        'user.fields': ['username', 'name', 'verified'],
+        'media.fields': ['url', 'preview_image_url', 'type']
       });
 
       console.error(`Fetched ${response.tweets.length} tweets for query: "${query}"`);
 
-      const tweets = response.tweets.map(tweet => ({
-        id: tweet.id,
-        text: tweet.text,
-        authorId: tweet.author_id ?? '',
-        metrics: {
-          likes: tweet.public_metrics?.like_count ?? 0,
-          retweets: tweet.public_metrics?.retweet_count ?? 0,
-          replies: tweet.public_metrics?.reply_count ?? 0,
-          quotes: tweet.public_metrics?.quote_count ?? 0
-        },
-        createdAt: tweet.created_at ?? ''
-      }));
+      const mediaByKey = new Map<string, MediaItem>();
+      const includedMedia = (response.includes as any)?.media;
+      if (Array.isArray(includedMedia)) {
+        for (const m of includedMedia) {
+          mediaByKey.set(m.media_key, {
+            type: m.type ?? 'unknown',
+            url: m.url ?? null,
+            preview_image_url: m.preview_image_url ?? null
+          });
+        }
+      }
+
+      const tweets = response.tweets.map(tweet => {
+        const keys = (tweet as any).attachments?.media_keys ?? [];
+        const media = keys
+          .map((k: string) => mediaByKey.get(k))
+          .filter((m: MediaItem | undefined): m is MediaItem => Boolean(m));
+        return {
+          id: tweet.id,
+          text: tweet.text,
+          authorId: tweet.author_id ?? '',
+          metrics: {
+            likes: tweet.public_metrics?.like_count ?? 0,
+            retweets: tweet.public_metrics?.retweet_count ?? 0,
+            replies: tweet.public_metrics?.reply_count ?? 0,
+            quotes: tweet.public_metrics?.quote_count ?? 0
+          },
+          createdAt: tweet.created_at ?? '',
+          media
+        };
+      });
 
       const users = response.includes.users.map(user => ({
         id: user.id,
