@@ -1,6 +1,6 @@
 {
   "name": "twitter-mcp-media",
-  "version": "0.2.0-media.1",
+  "version": "0.2.0-media.2",
   "description": "Fork of @enescinar/twitter-mcp that surfaces media (images, videos, preview URLs) in search_tweets responses.",
   "type": "module",
   "main": "build/index.js",
@@ -14,6 +14,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node build/index.js",
+    "prepare": "npm run build",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
