@@ -18,13 +18,30 @@ export const PostTweetSchema = z.object({
     reply_to_tweet_id: z.string().optional()
 });
 
+const iso8601 = z.string().regex(
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/,
+    'Must be ISO 8601 UTC, e.g. 2026-08-20T00:00:00Z'
+);
+
 export const SearchTweetsSchema = z.object({
     query: z.string().min(1, 'Search query cannot be empty'),
     count: z.number()
         .int('Count must be an integer')
         .min(10, 'Minimum count is 10')
-        .max(100, 'Maximum count is 100')
+        .max(100, 'Maximum count is 100'),
+    // Recent search spans the last 7 days by default. Bounding the window is
+    // the difference between paying for one day of tweets and re-paying for
+    // the same week on every run.
+    start_time: iso8601.optional(),
+    end_time: iso8601.optional(),
+    since_id: z.string().regex(/^\d+$/, 'since_id must be a tweet ID').optional()
 });
+
+export interface SearchWindow {
+    start_time?: string;
+    end_time?: string;
+    since_id?: string;
+}
 
 export type PostTweetArgs = z.infer<typeof PostTweetSchema>;
 export type SearchTweetsArgs = z.infer<typeof SearchTweetsSchema>;
@@ -33,6 +50,8 @@ export type SearchTweetsArgs = z.infer<typeof SearchTweetsSchema>;
 export interface TweetMetrics {
     likes: number;
     retweets: number;
+    replies: number;
+    quotes: number;
 }
 
 export interface PostedTweet {
@@ -83,6 +102,7 @@ export interface FormattedTweet {
         username: string;
     };
     content: string;
+    createdAt: string;
     metrics: TweetMetrics;
     media: MediaItem[];
     url: string;

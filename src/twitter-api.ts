@@ -1,5 +1,5 @@
 import { TwitterApi } from 'twitter-api-v2';
-import { Config, TwitterError, Tweet, TwitterUser, PostedTweet, MediaItem } from './types.js';
+import { Config, TwitterError, Tweet, TwitterUser, PostedTweet, MediaItem, SearchWindow } from './types.js';
 
 export class TwitterClient {
   private client: TwitterApi;
@@ -39,7 +39,11 @@ export class TwitterClient {
     }
   }
 
-  async searchTweets(query: string, count: number): Promise<{ tweets: Tweet[], users: TwitterUser[] }> {
+  async searchTweets(
+    query: string,
+    count: number,
+    window: SearchWindow = {}
+  ): Promise<{ tweets: Tweet[], users: TwitterUser[] }> {
     try {
       const endpoint = 'tweets/search';
       await this.checkRateLimit(endpoint);
@@ -47,12 +51,24 @@ export class TwitterClient {
       const response = await this.client.v2.search(query, {
         max_results: count,
         expansions: ['author_id', 'attachments.media_keys'],
-        'tweet.fields': ['public_metrics', 'created_at', 'attachments'],
+        // note_tweet carries the untruncated body of posts over 280 chars;
+        // `text` alone comes back clipped with an ellipsis.
+        'tweet.fields': ['public_metrics', 'created_at', 'attachments', 'note_tweet'],
         'user.fields': ['username', 'name', 'verified'],
-        'media.fields': ['url', 'preview_image_url', 'type']
+        'media.fields': ['url', 'preview_image_url', 'type'],
+        ...(window.start_time ? { start_time: window.start_time } : {}),
+        ...(window.end_time ? { end_time: window.end_time } : {}),
+        ...(window.since_id ? { since_id: window.since_id } : {})
       });
 
-      console.error(`Fetched ${response.tweets.length} tweets for query: "${query}"`);
+      const bounds = [
+        window.start_time ? `since ${window.start_time}` : null,
+        window.end_time ? `until ${window.end_time}` : null,
+        window.since_id ? `after id ${window.since_id}` : null
+      ].filter(Boolean).join(', ') || 'last 7 days (unbounded)';
+      console.error(
+        `Fetched ${response.tweets.length} tweets (cap ${count}, ${bounds}) for query: "${query}"`
+      );
 
       const mediaByKey = new Map<string, MediaItem>();
       const includedMedia = (response.includes as any)?.media;
@@ -71,9 +87,10 @@ export class TwitterClient {
         const media = keys
           .map((k: string) => mediaByKey.get(k))
           .filter((m: MediaItem | undefined): m is MediaItem => Boolean(m));
+        const noteText = (tweet as any).note_tweet?.text;
         return {
           id: tweet.id,
-          text: tweet.text,
+          text: noteText ?? tweet.text,
           authorId: tweet.author_id ?? '',
           metrics: {
             likes: tweet.public_metrics?.like_count ?? 0,

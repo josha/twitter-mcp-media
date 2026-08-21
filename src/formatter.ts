@@ -8,6 +8,7 @@ export class ResponseFormatter {
         username: user.username
       },
       content: tweet.text,
+      createdAt: tweet.createdAt,
       metrics: tweet.metrics,
       media: tweet.media ?? [],
       url: `https://twitter.com/${user.username}/status/${tweet.id}`
@@ -54,7 +55,9 @@ export class ResponseFormatter {
         `Tweet #${tweet.position}`,
         `From: @${tweet.author.username}`,
         `Content: ${tweet.content}`,
-        `Metrics: ${tweet.metrics.likes} likes, ${tweet.metrics.retweets} retweets`,
+        `Posted: ${tweet.createdAt || '(unavailable)'}`,
+        `Metrics: ${tweet.metrics.likes} likes, ${tweet.metrics.retweets} retweets, ` +
+          `${tweet.metrics.replies} replies, ${tweet.metrics.quotes} quotes`,
       ];
       if (tweet.media && tweet.media.length > 0) {
         const mediaParts = tweet.media.map(m =>

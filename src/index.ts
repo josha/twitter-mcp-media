@@ -94,9 +94,21 @@ export class TwitterServer {
               },
               count: {
                 type: 'number',
-                description: 'Number of tweets to return (10-100)',
+                description: 'Maximum tweets to return (10-100). This is a cap, not a target: the API bills per tweet returned, so a bounded time window keeps the real cost well below this number.',
                 minimum: 10,
                 maximum: 100
+              },
+              start_time: {
+                type: 'string',
+                description: 'Oldest tweet to return, ISO 8601 UTC (e.g. 2026-08-20T00:00:00Z). Defaults to 7 days ago, which re-fetches a whole week on every call.'
+              },
+              end_time: {
+                type: 'string',
+                description: 'Newest tweet to return, ISO 8601 UTC (e.g. 2026-08-21T00:00:00Z).'
+              },
+              since_id: {
+                type: 'string',
+                description: 'Return only tweets newer than this tweet ID. Takes precedence over start_time when both are set.'
               }
             },
             required: ['query', 'count']
@@ -157,7 +169,12 @@ export class TwitterServer {
 
     const { tweets, users } = await this.client.searchTweets(
       result.data.query,
-      result.data.count
+      result.data.count,
+      {
+        start_time: result.data.start_time,
+        end_time: result.data.end_time,
+        since_id: result.data.since_id
+      }
     );
 
     const formattedResponse = ResponseFormatter.formatSearchResponse(
